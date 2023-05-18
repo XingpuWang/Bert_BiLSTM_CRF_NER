@@ -14,6 +14,7 @@ class Model(nn.Module):
             bidirectional=True,
         )
         self.linear = nn.Linear(2 * HIDDEN_SIZE, TARGET_SIZE)
+        self.crf = CRF(TARGET_SIZE)
 
     def _get_lstm_feature(self, input):
         out = self.embed(input)
@@ -22,7 +23,11 @@ class Model(nn.Module):
 
     def forward(self, input, mask):
         out = self._get_lstm_feature(input)
-        return out
+        return self.crf.decode(out, mask)
+    
+    def loss_fn(self, input, target, mask):
+        y_pred = self._get_lstm_feature(input)
+        return -self.crf.forward(y_pred, target, mask, reduction='mean')
 
 if __name__ == '__main__':
     model = Model()
